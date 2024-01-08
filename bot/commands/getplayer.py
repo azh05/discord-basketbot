@@ -1,12 +1,41 @@
 import discord
 from discord.ext import commands
 from bot.historicaldata.scrape import current_season_scrape
+from bot.historicaldata.scrape import career_scrape
 import pandas as pd
 
 df_cur = current_season_scrape()
 excel_path = 'bot/historicaldata/historical_player_data.xlsx'
 df_hist = pd.read_excel(excel_path)
 current_year = 2023
+
+df_career = career_scrape()
+
+# remove columns for career stats
+columns_remove = [
+    'GP_RANK',
+    'MIN_RANK',
+    'FGM_RANK',
+    'FGA_RANK',
+    'FG_PCT_RANK',
+    'FG3M_RANK',
+    'FG3A_RANK',
+    'FG3_PCT_RANK',
+    'FTM_RANK',
+    'FTA_RANK',
+    'FT_PCT_RANK',
+    'OREB_RANK',
+    'DREB_RANK',
+    'REB_RANK',
+    'AST_RANK',
+    'STL_RANK',
+    'BLK_RANK',
+    'TOV_RANK',
+    'PF_RANK',
+    'PTS_RANK',
+    'AST_TOV_RANK',
+    'STL_TOV_RANK'
+]
 
 # format player stats df for printing to discord chat
 def format_df_print(df, player_name):
@@ -27,8 +56,49 @@ class GetPlayer(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # player ranking for specific stat
     @commands.command()
-    async def statsSzn(self, ctx, first_name, last_name, season_type, year):
+    async def statsrank(self, ctx, first_name, last_name, stat):
+        print("Command recieved")
+        player_full_name = first_name + " " + last_name
+
+        name_match = df_career['PLAYER_NAME'].str.lower() == player_full_name.lower()
+        stat_match = df_career.columns.str.contains(stat.upper()).any()
+
+        if not name_match.any():
+            await ctx.send(f"{player_full_name} is not in the database!")
+            return
+        
+        if not stat_match:
+            await ctx.send(f"{stat} is not a metric. See statshelp for the list of statistics.")
+            return
+    
+        df_career_player = df_career[name_match].reset_index(drop=True)
+
+        # column name for ranking
+        stat_rank = stat.upper() + "_RANK"
+
+        await ctx.send(f"{stat}: {df_career_player[stat.upper()][0]}\nRank: {df_career_player[stat_rank][0]}\n")
+
+    # players career/total stats
+    @commands.command()
+    async def statscareer(self, ctx, first_name, last_name): 
+        print("Command recieved")
+        player_full_name = first_name + " " + last_name
+
+        name_match = df_career['PLAYER_NAME'].str.lower() == player_full_name.lower()
+
+        if not name_match.any():
+            await ctx.send(f"{player_full_name} is not in the database!")
+            return
+        
+        df_career_player = df_career[name_match].reset_index(drop=True)
+        df_career_player.drop(columns=columns_remove, inplace=True)
+        await ctx.send(format_df_print(df_career_player, player_full_name))
+        
+    # players stats by season
+    @commands.command()
+    async def statsszn(self, ctx, first_name, last_name, season_type, year):
         print("Command received")
 
         # checking parameters

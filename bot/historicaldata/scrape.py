@@ -99,4 +99,13 @@ def historical_scrape():
     path = 'bot/historicaldata/historical_player_data.xlsx'
     df.to_excel(path, index=False)
 
-historical_scrape()
+def career_scrape():
+    url_career = "https://stats.nba.com/stats/leagueLeaders?ActiveFlag=No&LeagueID=00&PerMode=Totals&Scope=S&Season=All%20Time&SeasonType=Regular%20Season&StatCategory=PTS"
+    r=requests.get(url=url_career, headers=headers).json()
+    df_career = pd.DataFrame(r['resultSet']['rowSet'], columns=r['resultSet']['headers'])
+    df_career.drop(columns=['PLAYER_ID'], inplace=True)
+
+    return(df_career)
+    
+career_scrape()
+#historical_scrape()
