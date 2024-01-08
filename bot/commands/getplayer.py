@@ -56,6 +56,66 @@ class GetPlayer(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # top players for specific stat
+    @commands.command()
+    async def statstop(self, ctx, stat, amt):
+        print("Command recieved")
+        
+        # check paramters
+        isInt = True
+        try:
+            amt = int(amt)
+        except ValueError:
+            isInt = False
+            
+        df_length = len(df_career)
+
+        if not isInt:
+            await ctx.send(f"Enter an positive integer between 1 and {df_length}")
+            return
+        
+        if amt > df_length or amt < 1:
+            await ctx.send(f"Please input a number between 1 and {df_length}")
+            return
+        
+        stat_match = df_career.columns.str.contains(stat.upper())
+
+        if not stat_match.any():
+            await ctx.send(f"{stat} is not a metric. See statshelp for the list of statistics.")
+            return
+        
+        stat_rank = stat.upper() + "_RANK"
+        print_statement = f"**{stat.upper()}:**\n"
+        
+        count = 0
+        count_sends = 1
+        break_loop = False
+        for i in range(1, amt+1):
+            df_temp = df_career[df_career[stat_rank] == i].reset_index(drop=True)
+            
+            # if there are multiple players with the same rank
+            for j in range(len(df_temp)):
+                if count >= amt:
+                    break_loop = True
+                    break
+                
+                name=df_temp["PLAYER_NAME"][j]
+                val=df_temp[stat.upper()][j]
+                print_temp = f"{count+1}: {name}, {val}\n"
+
+                # check if message length is appopriate length
+                if len(print_statement) + len(print_temp) > 2000: 
+                    await ctx.send(print_statement)
+                    print_statement = f"**{stat.upper()}** part {count_sends}\n"
+                else:
+                    print_statement+=print_temp
+                count+=1
+
+            if break_loop:
+                break
+
+        await ctx.send(print_statement)
+
     # player ranking for specific stat
     @commands.command()
     async def statsrank(self, ctx, first_name, last_name, stat):
@@ -63,13 +123,13 @@ class GetPlayer(commands.Cog):
         player_full_name = first_name + " " + last_name
 
         name_match = df_career['PLAYER_NAME'].str.lower() == player_full_name.lower()
-        stat_match = df_career.columns.str.contains(stat.upper()).any()
+        stat_match = df_career.columns.str.contains(stat.upper())
 
         if not name_match.any():
             await ctx.send(f"{player_full_name} is not in the database!")
             return
         
-        if not stat_match:
+        if not stat_match.any():
             await ctx.send(f"{stat} is not a metric. See statshelp for the list of statistics.")
             return
     
