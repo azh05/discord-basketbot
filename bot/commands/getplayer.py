@@ -55,7 +55,7 @@ def format_df_print(df, player_name):
 class GetPlayer(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        
     # top players for specific stat
     @commands.command()
     async def statstop(self, ctx, stat, amt):
