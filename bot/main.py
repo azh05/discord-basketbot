@@ -9,7 +9,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 # list of cog files
-cog_files = ["commands.hello", "commands.getplayer"]
+cog_files = ["commands.hello", "commands.getplayer", "commands.graphplayer"]
 
 # set intents
 intents = Intents.all()
