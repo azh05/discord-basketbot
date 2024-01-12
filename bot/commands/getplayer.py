@@ -55,7 +55,7 @@ def format_df_print(df, player_name):
 class GetPlayer(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
+
     # top players for specific stat
     @commands.command()
     async def statstop(self, ctx, stat, amt):
@@ -107,6 +107,7 @@ class GetPlayer(commands.Cog):
                 if len(print_statement) + len(print_temp) > 2000: 
                     await ctx.send(print_statement)
                     print_statement = f"**{stat.upper()}** part {count_sends}\n"
+                    count_sends+=1
                 else:
                     print_statement+=print_temp
                 count+=1
@@ -120,7 +121,7 @@ class GetPlayer(commands.Cog):
     @commands.command()
     async def statsrank(self, ctx, first_name, last_name, stat):
         print("Command recieved")
-        player_full_name = first_name + " " + last_name
+        player_full_name = first_name.lower().capitalize() + " " + last_name.lower().capitalize()
 
         name_match = df_career['PLAYER_NAME'].str.lower() == player_full_name.lower()
         stat_match = df_career.columns.str.contains(stat.upper())
@@ -144,7 +145,7 @@ class GetPlayer(commands.Cog):
     @commands.command()
     async def statscareer(self, ctx, first_name, last_name): 
         print("Command recieved")
-        player_full_name = first_name + " " + last_name
+        player_full_name = first_name.lower().capitalize() + " " + last_name.lower().capitalize()
 
         name_match = df_career['PLAYER_NAME'].str.lower() == player_full_name.lower()
 
@@ -176,7 +177,7 @@ class GetPlayer(commands.Cog):
             await ctx.send("Year must be an integer between 2000 and 2023")
             return
         
-        player_full_name = first_name + " " + last_name
+        player_full_name = first_name.lower().capitalize() + " " + last_name.lower().capitalize()
 
         if int(year) == current_year:
             name_match = df_cur['PLAYER'].str.lower() == player_full_name.lower()
@@ -199,5 +200,3 @@ class GetPlayer(commands.Cog):
         
 async def setup(bot):
     await bot.add_cog(GetPlayer(bot))
-
-

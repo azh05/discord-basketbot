@@ -5,7 +5,7 @@ setup(
     version='0.1',
     packages=find_packages(),
     install_requires=[
-        'pandas', 'discord', 'requests', 'numpy', 'matplotlib', 'scikit-learn'
+        'pandas', 'discord', 'requests', 'numpy', 'matplotlib', 'scikit-learn', 'beautifulsoup4'
     ],
     entry_points={
     'console_scripts': [
