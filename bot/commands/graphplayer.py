@@ -25,13 +25,17 @@ class GraphPlayer(commands.Cog):
 
     @commands.command()
     async def graphstatbygame(self, ctx, first_name, last_name, stat, year):
+        print("Command received")
         # adjust year to be the same as nba.com year system
-        year+=1 
+        year_string = year+'-'+str((int(year[2:])+1))
+        year=int(year)+1 
         
         # scrape
         df_gamelog = scrape_gamelog(first_name, last_name, year)
 
-        # check if valid inputss
+        print(df_gamelog.head())
+        
+        # check if valid inputs
         if df_gamelog.empty:
             await ctx.send("Invalid name or year!")
             return
@@ -48,7 +52,7 @@ class GraphPlayer(commands.Cog):
         # create graph
         fig = plt.figure()
         plt.plot(df_gamelog['game_season'], df_gamelog[stat.lower()], marker='o', color='black')
-        plt.title(f'{player_full_name}: {year} {stat.upper()} distribution')
+        plt.title(f'{player_full_name}: {year_string} {stat.upper()} distribution')
 
         plt.xlabel('Game number')
         plt.ylabel(stat.lower())

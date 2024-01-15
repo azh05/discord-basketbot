@@ -124,6 +124,7 @@ def career_scrape():
     df_career[floattoint] = df_career[floattoint].fillna(0).astype('int64')
 
     return(df_career)
-    
+
+# updating historical and career database  
 #career_scrape()
-historical_scrape()
+#historical_scrape()
