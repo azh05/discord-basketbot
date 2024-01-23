@@ -126,5 +126,7 @@ def career_scrape():
     return(df_career)
 
 # updating historical and career database  
-#career_scrape()
-#historical_scrape()
+
+if __name__ == '__main__':
+    print(career_scrape())
+    historical_scrape()

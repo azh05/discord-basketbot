@@ -1,14 +1,16 @@
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
-import numpy
+from datetime import datetime
+import time
+import unidecode
 
 dropped_columns = [
-    'date_game', 'age', 'team_id', 'game_location', 'opp_id', 'game_result', 'gs', 'reason'
+    'age', 'team_id', 'game_location', 'opp_id', 'game_result', 'gs', 'reason'
 ]
 
 dropped_columns_h = [
-    'date_game', 'age', 'team_id', 'game_location', 'opp_id', 'game_result', 'gs'
+    'age', 'team_id', 'game_location', 'opp_id', 'game_result', 'gs'
 ]
 
 int_stats = [
@@ -38,7 +40,6 @@ def calc_fantasy(df):
     fpoints = 0
     for stat in df.index:
         if stat in fantasy_pts:
-            #print(f"{stat}: {df[stat]}, {fantasy_pts[stat]}")
             fpoints += int(df[stat]) * int(fantasy_pts[stat])
 
     return fpoints
@@ -81,15 +82,40 @@ def scrape_gamelog(first_name, last_name, year):
     
     name+=first_name[0:2].lower()
     
-    first_letter = last_name[0]
+    first_letter = last_name[0].lower()
 
     url = f"https://www.basketball-reference.com/players/{first_letter}/{name}01/gamelog/{year}"
     response = requests.get(url)
 
+    # to delay web scraping
+    sleep_time = 3
+    times_tried = 1
+
+    while response.status_code != 200 and times_tried < 5:
+        time.sleep(sleep_time*times_tried)
+        response = requests.get(url)
+        print(f'Try {times_tried}, status code {response.status_code}')
+        times_tried += 1
+
     if response.status_code == 200:
 
-        # find html attribute with id "pgl_basic"
+        # create soup object
         soup = BeautifulSoup(response.text, 'html.parser')
+
+        # check if the player in the link is the right player (antonio davis (01) vs anthony davis (02))
+        title = unidecode.unidecode(soup.title.get_text())
+
+        iteration = 2
+
+        while title is not None and not (first_name.lower() in title.lower() and last_name.lower() in title.lower()) and iteration < 4:
+            url = f"https://www.basketball-reference.com/players/{first_letter}/{name}0{iteration}/gamelog/{year}"
+            response = requests.get(url)
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            title = unidecode.unidecode(soup.title.get_text())
+            iteration += 1
+    
+        # find html attribute with id "pgl_basic"
         table = soup.find('table', {'id': 'pgl_basic'})
 
         data = []
@@ -141,14 +167,21 @@ def scrape_gamelog(first_name, last_name, year):
             df_gamelog.dropna(inplace=True)
             df_gamelog[historical_stat_ignore] = df_gamelog[historical_stat_ignore].apply(pd.to_numeric).astype('Int64')
             df_gamelog['ft_pct'] = pd.to_numeric(df_gamelog['ft_pct']).astype('float64')
+            
+            # change to datetime
+            df_gamelog['date_game'] = pd.to_datetime(df_gamelog["date_game"], format='%Y-%m-%d')
 
             # add fantasy points
             df_gamelog['fpoints'] = df_gamelog.apply(calc_fantasy, axis=1)
 
             return df_gamelog
-        else: 
+        else:
             return
+    else: 
+        print("Could not access link")
 
-# Tests     
-# df = scrape_gamelog("Michael", "Porter", 2024)
-# print(df)
+# Tests    
+
+if __name__ == '__main__': 
+    df = scrape_gamelog("Alperen", "Sengun", 2022)
+    print(df)

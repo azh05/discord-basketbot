@@ -33,6 +33,11 @@ class GraphPlayer(commands.Cog):
         # scrape
         df_gamelog = scrape_gamelog(first_name, last_name, year)
 
+        # checking if bot was able to scrape
+        if df_gamelog is None:
+            await ctx.send("Unable to retrieve data from the website! Too many requests may have been made")
+            return
+
         print(df_gamelog.head())
         
         # check if valid inputs
