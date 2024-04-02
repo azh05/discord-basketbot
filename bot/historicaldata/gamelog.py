@@ -88,7 +88,7 @@ def scrape_gamelog(first_name, last_name, year):
     response = requests.get(url)
 
     # to delay web scraping
-    sleep_time = 3
+    sleep_time = 2
     times_tried = 1
 
     while response.status_code != 200 and times_tried < 5:
@@ -183,5 +183,5 @@ def scrape_gamelog(first_name, last_name, year):
 # Tests    
 
 if __name__ == '__main__': 
-    df = scrape_gamelog("giannis", "antetokounmpo", 2023)
-    print(df)
+    df = scrape_gamelog("JAYSON", "tatum", 2023)
+    print(list(df["game_season"]))

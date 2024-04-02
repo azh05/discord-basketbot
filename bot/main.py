@@ -37,4 +37,5 @@ async def load_commands():
 
 # run bot
 if __name__ == "__main__":
+
     bot.run(BOT_TOKEN)
