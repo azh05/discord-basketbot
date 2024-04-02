@@ -183,5 +183,5 @@ def scrape_gamelog(first_name, last_name, year):
 # Tests    
 
 if __name__ == '__main__': 
-    df = scrape_gamelog("Alperen", "Sengun", 2022)
+    df = scrape_gamelog("giannis", "antetokounmpo", 2023)
     print(df)

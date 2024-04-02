@@ -30,7 +30,7 @@ def graphstatsma(first_name, last_name, start_year, end_year, stat, game_count):
     
     sma = df_gamelog[stat].rolling(window=game_count).mean()
     
-    long_period = df_gamelog.shape[0]/2.5 if df_gamelog.shape[0] > 20 else df_gamelog.shape[0]/2
+    long_period = df_gamelog.shape[0]/2.5 if df_gamelog.shape[0] > 20 else df_gamelog.shape[0]/2 # shape gets the number of games in the df
     sma_long = df_gamelog[stat].rolling(window=int(long_period)).mean()
 
     plt.plot(df_gamelog[stat], label=stat)
@@ -45,4 +45,4 @@ def graphstatsma(first_name, last_name, start_year, end_year, stat, game_count):
     plt.show()
 
 if __name__ == '__main__':
-    graphstatsma("Collin", "Sexton", 2023, 2024, "fpoints", 5)
+    graphstatsma("Jayson", "Tatum", 2023, 2024, "pts", 5)

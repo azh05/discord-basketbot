@@ -32,13 +32,6 @@ class GraphPlayer(commands.Cog):
         
         # scrape
         df_gamelog = scrape_gamelog(first_name, last_name, year)
-
-        # checking if bot was able to scrape
-        if df_gamelog is None:
-            await ctx.send("Unable to retrieve data from the website! Too many requests may have been made")
-            return
-
-        print(df_gamelog.head())
         
         # check if valid inputs
         if df_gamelog.empty:
@@ -133,6 +126,53 @@ class GraphPlayer(commands.Cog):
         
         await ctx.send(file=file)
         os.remove('plot.png')
+
+    @commands.command()
+    async def graphplayermovingaverage(self, ctx, first_name, last_name, stat, start_year, end_year, game_count): 
+        print("Command recieved")
+
+        if start_year > end_year: 
+            await ctx.send("Invalid years, start year must be before end year")
+            return
+        
+        start_year = int(start_year)
+        end_year = int(end_year)
+        game_count = int(game_count)
+
+        full_name = first_name.lower().capitalize() + " " + last_name.lower().capitalize()
+        df_gamelog = scrape_gamelog(first_name=first_name, last_name=last_name, year=start_year+1)
+
+        if df_gamelog is None:
+            start_year+=1
+    
+        for year in range(start_year+1, end_year):
+            df_gamelog_temp = scrape_gamelog(first_name=first_name, last_name=last_name, year=year)
+
+            if df_gamelog is None and not df_gamelog_temp is None:
+                df_gamelog = df_gamelog_temp
+            
+            elif not df_gamelog is None and not df_gamelog_temp is None:
+                df_gamelog = pd.concat([df_gamelog, df_gamelog_temp], ignore_index=True).reset_index(drop=True)
+        
+        sma = df_gamelog[stat].rolling(window=game_count).mean()
+        long_period = df_gamelog.shape[0]/2.5 if df_gamelog.shape[0] > 20 else df_gamelog.shape[0]/2 # shape gets the number of games in the df
+        sma_long = df_gamelog[stat].rolling(window=int(long_period)).mean()
+
+        plt.plot(df_gamelog[stat], label=stat)
+        plt.plot(sma, label=f'{game_count}-game SMA')
+        plt.plot(sma_long, label='SMA long')
+
+        plt.title(f"{full_name} {stat} for the {int(start_year)}-{end_year%100} season(s)")
+        plt.legend()
+        plt.xlabel("Game #")
+        plt.ylabel(stat)
+
+        plt.savefig('plot.png')
+        file = discord.File("plot.png")
+        
+        await ctx.send(file=file)
+        os.remove('plot.png')
+
         
 async def setup(bot):
     await bot.add_cog(GraphPlayer(bot))
