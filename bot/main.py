@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import Intents
 from dotenv import load_dotenv
+from googlecloudstorage.addtogcs import add_to_gcs
 import os
 
 # load bot token key
@@ -9,7 +10,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 # list of cog files
-cog_files = ["commands.hello", "commands.getplayer", "commands.graphplayer"]
+cog_files = ["commands.hello", "commands.getplayer", "commands.graphplayer", "commands.fantasystreamers"]
 
 # set intents
 intents = Intents.all()
@@ -37,5 +38,4 @@ async def load_commands():
 
 # run bot
 if __name__ == "__main__":
-
     bot.run(BOT_TOKEN)

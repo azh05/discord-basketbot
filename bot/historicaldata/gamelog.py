@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import time
 import unidecode
+import re
 
 dropped_columns = [
     'age', 'team_id', 'game_location', 'opp_id', 'game_result', 'gs', 'reason'
@@ -72,23 +73,33 @@ def time_to_decimal(time):
     secs = int(split_time[1])
     return mins + secs/60.0
 
+# strip nonalphanumeric characters from a string (d'angelo russell --> dangelo russell)
+def strip_non_alphanumeric(s):
+    pattern = re.compile(r'[\W_]+')
+    return pattern.sub('', s)
+
 # scrape gamelog from basketball reference
 def scrape_gamelog(first_name, last_name, year):
     name = ""
-    if len(last_name) < 5:
-        name+=last_name[0:len(last_name)].lower()
+
+    # preprocess names
+    first_name_stripped = strip_non_alphanumeric(first_name)
+    last_name_stripped = strip_non_alphanumeric(last_name)
+
+    if len(last_name_stripped) < 5:
+        name+=last_name_stripped[0:len(last_name_stripped)].lower()
     else:
-        name+=last_name[0:5].lower()
+        name+=last_name_stripped[0:5].lower()
+
+    name+=first_name_stripped[0:2].lower()
     
-    name+=first_name[0:2].lower()
-    
-    first_letter = last_name[0].lower()
+    first_letter = last_name_stripped[0].lower()
 
     url = f"https://www.basketball-reference.com/players/{first_letter}/{name}01/gamelog/{year}"
     response = requests.get(url)
 
     # to delay web scraping
-    sleep_time = 2
+    sleep_time = 3
     times_tried = 1
 
     while response.status_code != 200 and times_tried < 5:
@@ -98,21 +109,21 @@ def scrape_gamelog(first_name, last_name, year):
         times_tried += 1
 
     if response.status_code == 200:
-
         # create soup object
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # check if the player in the link is the right player (antonio davis (01) vs anthony davis (02))
         title = unidecode.unidecode(soup.title.get_text())
-
         iteration = 2
+        print(url)
 
-        while title is not None and not (first_name.lower() in title.lower() and last_name.lower() in title.lower()) and iteration < 4:
+        while title is not None and not (first_name.lower() in title.lower() and last_name.lower() in title.lower()) and iteration <= 7:
             url = f"https://www.basketball-reference.com/players/{first_letter}/{name}0{iteration}/gamelog/{year}"
             response = requests.get(url)
             
             soup = BeautifulSoup(response.text, 'html.parser')
             title = unidecode.unidecode(soup.title.get_text())
+            time.sleep(1)
             iteration += 1
     
         # find html attribute with id "pgl_basic"
@@ -183,5 +194,5 @@ def scrape_gamelog(first_name, last_name, year):
 # Tests    
 
 if __name__ == '__main__': 
-    df = scrape_gamelog("JAYSON", "tatum", 2023)
-    print(list(df["game_season"]))
+    df = scrape_gamelog("jayson", "tatum", 2024)
+    print(df)

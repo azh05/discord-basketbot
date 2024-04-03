@@ -1,23 +1,12 @@
 import requests
 import pandas as pd
 import numpy as np
-from historicaldata.gamelog import scrape_gamelog
+from bot.historicaldata.gamelog import scrape_gamelog
 import os
 from google.cloud import storage
 from dotenv import load_dotenv
 import time
-
-# first scrape nba website to get names of all players with more than 15 mpg (abritrary cutoff) of playing time
-url = "https://stats.nba.com/stats/leagueLeaders?LeagueID=00&PerMode=PerGame&Scope=S&Season=2023-24&SeasonType=Regular%20Season&StatCategory=MIN"
-r = requests.get(url).json()
-table_headers = r['resultSet']['headers']
-
-players = pd.DataFrame(r['resultSet']['rowSet'], columns=table_headers)
-players.drop(columns=['RANK', 'TEAM_ID', 'PLAYER_ID'], inplace=True)
-players.drop(players.columns.difference(['PLAYER', 'MIN']), axis=1, inplace=True)
-players = players[players['MIN'] > 15]
-
-list_of_players = list(players['PLAYER'])
+from bot.googlecloudstorage.util import name_to_file_name, get_list_of_players
 
 # get gamelog for each player and save as csv
 current_year = 2024
@@ -43,22 +32,32 @@ def upload_csv(file_name):
 
 
 def add_to_gcs():
-    i = 0
+    list_of_players = get_list_of_players()
+    players_not_added = []
     for player in list_of_players:
-        first_name, last_name = player.split(" ")
+        names = player.split(" ") # gets first name, last name, (opt III, Jr, Sr)
+
+        first_name = names[0]
+        last_name = names[1]
+        if len(names) == 3:
+            last_name += f" {names[2]}"
+            
+        file_name = name_to_file_name(player)
+
+        print(f"Processing {player}")
         df = scrape_gamelog(first_name=first_name, last_name=last_name, year=current_year)
-        file_name = f"{first_name}_{last_name}.csv"
-        
+
         if df is not None:
             df.to_csv(file_name, index=False)
+        else:
+            players_not_added.append(player)
         
-        
-        if os.path.exists(file_name) and i > 32:
+        if os.path.exists(file_name):
             upload_csv(file_name)
-            time.sleep(1)
+            time.sleep(3)
+            os.remove(file_name)
 
-        os.remove(file_name)
-        i+=1
+    print(players_not_added) # clint capela, cedi osman not added
 
 if __name__ == '__main__':
     add_to_gcs()
